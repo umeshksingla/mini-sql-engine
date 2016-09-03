@@ -1,135 +1,57 @@
-import os
-import itertools
+from . import classes
+import sqlparse
 
-METADATA_FILE = "metadata.txt"
+db = classes.Database(name="Himalayan Database", tables=[])
 
-class Table(object):
-		"""
-			the Table Class
-		"""
-		def __init__(self, name, columns, rows):
-			"""
-				initializes the table with
-				name : table name
-				columns : list of names of column of this table
-				rows : list of dicts of type {corresponding column name : value, ..}
-			"""
-			self.name = name
-			self.columns = map(lambda x: x.strip(), columns)
-			self.rows = rows
-
-		def __make_row(self, row):
-			"""
-				returns a row in key value form
-			"""
-			values = row.split(",")
-			values = map(lambda x: int(x), values)
-
-			if len(values) != len(self.columns):
-				raise Exception("One of the rows is not of appropriate length")
-			
-			return dict(zip(self.columns, values))
-
-		def __print_row(self, row):
-			
-			for each in self.columns:
-				print str(row[each]) + "\t",
-			print
-
-		def load_contents(self):
-			"""
-				loads the content from the file
-			"""			
-			with open(self.name + ".csv") as f:
-				rows = f.read().splitlines()
-
-			rows = map(lambda x: x.replace("\"",""), rows)
-			rows = map(lambda x: x.strip(), rows)
-
-			for i in rows:
-				row = self.__make_row(i)
-				self.rows.append(row)
-
-
-		def print_contents(self):
-			"""
-				print the contents of entire table
-			"""
-			print self.name
-
-			for each in self.columns:
-				print each + "\t",
-			print
-
-			for each in self.rows:
-				self.__print_row(each)
-
-
-class Database(object):
+def select_query(stmt):
 	"""
-		the Database class
+		returns results of select query
+		We'll make a temporary table, store the result and then print it
 	"""
-	def __init__(self, name, tables):
-		"""
-			initialize the database with name and given (or zero) tables
-		"""
-		self.name = name
-		self.tables = tables
-
-	def load_contents(self):
-		"""
-			load the metadata, create and fill tables
-		"""
-
-		with open(METADATA_FILE) as metafile:
-			metalines = metafile.read().splitlines()
-
-		metalines = map(lambda x: x.strip(), metalines)
-
-		list_of_tables_and_columns = []
-		groups = []
-		useless = ['<begin_table>', '<end_table>']
-
-		# example - 
-		# if metalines = ['begin','6','8','end','begin','4','begin','1','4','end']
-		# and useless = ['begin', 'end'], then
-		# groups = [['begin'], ['6', '8'], ['end', 'begin'], ['4'], ['begin'], ['1', '4'], ['end']]
-		# after the following loop
-
-		for key, value in itertools.groupby(metalines, lambda x: x in useless):
-			groups.append(list(value))
-		list_of_tables_and_columns = [x for x in groups if x[0] not in useless] 
-
-		for each in list_of_tables_and_columns:
-			self.create_empty_table(each[0], each[1:])
-
-		for table in self.tables:
-			table.load_contents()
-
-	def create_empty_table(self, tablename, columns):
-		"""
-			initializes a table given in metadata with name, columns and rows being empty
-		"""
-
-		table = Table(tablename, columns, rows = [])
-		self.tables.append(table)
-
-	def print_contents(self):
-		"""
-			prints the entire database
-		"""
-		print "Database: " + self.name
-		for table in self.tables:
-			table.print_contents()
-			print
+	try:
+		column_list = str(stmt[2]).split(",")
+		table_list = str(stmt[6]).split(",")
+	except:
+		raise Exception("Invalid Syntax")
+	else:
+		
+		table_list = map(lambda x: db.get_table(x).prefix_table_name_to_columns(), table_list)
+		
+		# upperbound columns of the new table
+		all_columns = reduce(lambda x, y: x + y, table_list)	# make all column lists in table_list as one
+		
+		# temporary table with all columns
+		temp_table = classes.Table(
+			name="temp", 
+			columns=all_columns, 
+			rows=[]
+		)
+		
+		temp_table.print_contents()
 
 
 
 
+def main():
+	db.load_contents()
+	continue = True
+	while continue:
+		query = raw_input("hdsql>>> ")
+
+		for command in sqlparse.split(query)
+			stmt = sqlparse.parse(sqlparse.format(command, keyword_case='upper'))
+			stmt = stmt[0].tokens
+			type = str(stmt[0])
+			if len(stmt) < 7:
+				raise Exception("Invalid Syntax")
+			if type == "SELECT":
+				select_query(stmt)
+			elif type == "QUIT":
+				exit()
+			else:
+				raise Exception(type + " not supported.")
 
 
 
-
-
-
-
+if __name__ == '__main__':
+	main()
