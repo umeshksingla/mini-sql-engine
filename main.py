@@ -67,14 +67,13 @@ def where_select_query(temp_table, all_columns, where):
 			comparison1 = where.tokens[2]						# comparison = "A=8";
 			comparison1.tokens = [x for x in comparison1.tokens if not x.is_whitespace()]		# No more white spaces			
 			key1 = str(comparison1.tokens[0])						# key = "A"
-	
+			
 			if '.' not in key1:
 				key1 = check_overlapping_fields(all_columns, key1)
 			try:
 				value1 = int(str(comparison1.tokens[2]))
 			except:
 				value1 = str(comparison1.tokens[2])
-				raise SqlException("OR on joins with columns on both sides of the comparison yet")
 			
 			comparison2 = where.tokens[6]						# comparison = "A=8";
 			comparison2.tokens = [x for x in comparison2.tokens if not x.is_whitespace()]		# No more white spaces			
@@ -86,10 +85,13 @@ def where_select_query(temp_table, all_columns, where):
 				value2 = int(str(comparison2.tokens[2]))
 			except:
 				value2 = str(comparison2.tokens[2])
-				raise SqlException("OR on joins with columns on both sides of the comparison yet")
 
-			temp_table.delete_rows_by_both_int(key1, value1, str(comparison1.tokens[1]), key2, value2, str(comparison2.tokens[2]))
-			
+			if type(value1) == int and type(value2) == int:
+				temp_table.delete_rows_by_both_ints(key1, value1, str(comparison1.tokens[1]), key2, value2, str(comparison2.tokens[2]))
+			elif type(value1) == str and type(value2) == str:
+				temp_table.delete_rows_by_both_cols(key1, value1, str(comparison1.tokens[1]), key2, value2, str(comparison2.tokens[2]))
+			else:
+				raise SqlException("Only OR on joins with either comparisons with int or columns in both conditions supported.")
 		else:
 			raise SqlException("Invalid where condition")
 	elif len(where.tokens) <= 5:													# Only where is present

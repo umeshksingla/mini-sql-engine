@@ -103,7 +103,7 @@ class Table(object):
 			try:
 				if condition.strip() == "!=" or condition.strip() == "<>":
 					self.rows = filter(lambda x: x[key] != value, self.rows)
-				elif condition.strip() == "==" :
+				elif condition.strip() == "=" :
 					self.rows = filter(lambda x: x[key] == value, self.rows)
 				elif condition.strip() == ">=" :
 					self.rows = filter(lambda x: x[key] >= value, self.rows)
@@ -123,7 +123,7 @@ class Table(object):
 			try:
 				if condition.strip() == "!=" or condition.strip() == "<>":
 					self.rows = filter(lambda x: x[key] != x[value], self.rows)
-				elif condition.strip() == "==" :
+				elif condition.strip() == "=" :
 					self.rows = filter(lambda x: x[key] == x[value], self.rows)
 				elif condition.strip() == ">=" :
 					self.rows = filter(lambda x: x[key] >= x[value], self.rows)
@@ -144,7 +144,7 @@ class Table(object):
 				if condition1.strip() == "!=" or condition1.strip() == "<>":
 					if condition2.strip() == "!=" or condition2.strip() == "<>":
 						self.rows = filter(lambda x: x[key1] != value1 or x[key2] != value2, self.rows)
-					elif condition2.strip() == "==" :
+					elif condition2.strip() == "=" :
 						self.rows = filter(lambda x: x[key1] != value1 or x[key2] == value2, self.rows)
 					elif condition2.strip() == ">=" :
 						self.rows = filter(lambda x: x[key1] != value1 or x[key2] >= value2, self.rows)
@@ -154,10 +154,10 @@ class Table(object):
 						self.rows = filter(lambda x: x[key1] != value1 or x[key2] > value2, self.rows)
 					elif condition2.strip() == "<" :
 						self.rows = filter(lambda x: x[key1] != value1 or x[key2] < value2, self.rows)
-				elif condition1.strip() == "==":
+				elif condition1.strip() == "=":
 					if condition2.strip() == "!=" or condition2.strip() == "<>":
 						self.rows = filter(lambda x: x[key1] == value1 or x[key2] != value2, self.rows)
-					elif condition2.strip() == "==" :
+					elif condition2.strip() == "=" :
 						self.rows = filter(lambda x: x[key1] == value1 or x[key2] == value2, self.rows)
 					elif condition2.strip() == ">=" :
 						self.rows = filter(lambda x: x[key1] == value1 or x[key2] >= value2, self.rows)
@@ -170,7 +170,7 @@ class Table(object):
 				elif condition1.strip() == ">=":
 					if condition2.strip() == "!=" or condition2.strip() == "<>":
 						self.rows = filter(lambda x: x[key1] >= value1 or x[key2] != value2, self.rows)
-					elif condition2.strip() == "==" :
+					elif condition2.strip() == "=" :
 						self.rows = filter(lambda x: x[key1] >= value1 or x[key2] == value2, self.rows)
 					elif condition2.strip() == ">=" :
 						self.rows = filter(lambda x: x[key1] >= value1 or x[key2] >= value2, self.rows)
@@ -183,7 +183,7 @@ class Table(object):
 				elif condition1.strip() == "<=":
 					if condition2.strip() == "!=" or condition2.strip() == "<>":
 						self.rows = filter(lambda x: x[key1] <= value1 or x[key2] != value2, self.rows)
-					elif condition2.strip() == "==" :
+					elif condition2.strip() == "=" :
 						self.rows = filter(lambda x: x[key1] <= value1 or x[key2] == value2, self.rows)
 					elif condition2.strip() == ">=" :
 						self.rows = filter(lambda x: x[key1] <= value1 or x[key2] >= value2, self.rows)
@@ -196,7 +196,7 @@ class Table(object):
 				elif condition1.strip() == ">":
 					if condition2.strip() == "!=" or condition2.strip() == "<>":
 						self.rows = filter(lambda x: x[key1] > value1 or x[key2] != value2, self.rows)
-					elif condition2.strip() == "==" :
+					elif condition2.strip() == "=" :
 						self.rows = filter(lambda x: x[key1] > value1 or x[key2] == value2, self.rows)
 					elif condition2.strip() == ">=" :
 						self.rows = filter(lambda x: x[key1] > value1 or x[key2] >= value2, self.rows)
@@ -209,7 +209,7 @@ class Table(object):
 				elif condition1.strip() == "<":
 					if condition2.strip() == "!=" or condition2.strip() == "<>":
 						self.rows = filter(lambda x: x[key1] < value1 or x[key2] != value2, self.rows)
-					elif condition2.strip() == "==" :
+					elif condition2.strip() == "=" :
 						self.rows = filter(lambda x: x[key1] < value1 or x[key2] == value2, self.rows)
 					elif condition2.strip() == ">=" :
 						self.rows = filter(lambda x: x[key1] < value1 or x[key2] >= value2, self.rows)
@@ -219,6 +219,92 @@ class Table(object):
 						self.rows = filter(lambda x: x[key1] < value1 or x[key2] > value2, self.rows)
 					elif condition2.strip() == "<" :
 						self.rows = filter(lambda x: x[key1] < value1 or x[key2] < value2, self.rows)
+			except:
+				raise SqlException("Invalid column name")
+
+		def delete_rows_by_both_cols(self, key1, value1, condition1, key2, value2, condition2):
+			"""
+				delete rows where column 'key' has value 'value' and the condition doesn't hold
+			"""
+			try:
+				if condition1.strip() == "!=" or condition1.strip() == "<>":
+					if condition2.strip() == "!=" or condition2.strip() == "<>":
+						self.rows = filter(lambda x: x[key1] != x[value1] or x[key2] != x[value2], self.rows)
+					elif condition2.strip() == "=" :
+						self.rows = filter(lambda x: x[key1] != x[value1] or x[key2] == x[value2], self.rows)
+					elif condition2.strip() == ">=" :
+						self.rows = filter(lambda x: x[key1] != x[value1] or x[key2] >= x[value2], self.rows)
+					elif condition2.strip() == "<=" :
+						self.rows = filter(lambda x: x[key1] != x[value1] or x[key2] <= x[value2], self.rows)
+					elif condition2.strip() == ">" :
+						self.rows = filter(lambda x: x[key1] != x[value1] or x[key2] > x[value2], self.rows)
+					elif condition2.strip() == "<" :
+						self.rows = filter(lambda x: x[key1] != x[value1] or x[key2] < x[value2], self.rows)
+				elif condition1.strip() == "=":
+					if condition2.strip() == "!=" or condition2.strip() == "<>":
+						self.rows = filter(lambda x: x[key1] == x[value1] or x[key2] != x[value2], self.rows)
+					elif condition2.strip() == "=" :
+						self.rows = filter(lambda x: x[key1] == x[value1] or x[key2] == x[value2], self.rows)
+					elif condition2.strip() == ">=" :
+						self.rows = filter(lambda x: x[key1] == x[value1] or x[key2] >= x[value2], self.rows)
+					elif condition2.strip() == "<=" :
+						self.rows = filter(lambda x: x[key1] == x[value1] or x[key2] <= x[value2], self.rows)
+					elif condition2.strip() == ">" :
+						self.rows = filter(lambda x: x[key1] == x[value1] or x[key2] > x[value2], self.rows)
+					elif condition2.strip() == "<" :
+						self.rows = filter(lambda x: x[key1] == x[value1] or x[key2] < x[value2], self.rows)
+				elif condition1.strip() == ">=":
+					if condition2.strip() == "!=" or condition2.strip() == "<>":
+						self.rows = filter(lambda x: x[key1] >= x[value1] or x[key2] != x[value2], self.rows)
+					elif condition2.strip() == "=" :
+						self.rows = filter(lambda x: x[key1] >= x[value1] or x[key2] == x[value2], self.rows)
+					elif condition2.strip() == ">=" :
+						self.rows = filter(lambda x: x[key1] >= x[value1] or x[key2] >= x[value2], self.rows)
+					elif condition2.strip() == "<=" :
+						self.rows = filter(lambda x: x[key1] >= x[value1] or x[key2] <= x[value2], self.rows)
+					elif condition2.strip() == ">" :
+						self.rows = filter(lambda x: x[key1] >= x[value1] or x[key2] > x[value2], self.rows)
+					elif condition2.strip() == "<" :
+						self.rows = filter(lambda x: x[key1] >= x[value1] or x[key2] < x[value2], self.rows)
+				elif condition1.strip() == "<=":
+					if condition2.strip() == "!=" or condition2.strip() == "<>":
+						self.rows = filter(lambda x: x[key1] <= x[value1] or x[key2] != x[value2], self.rows)
+					elif condition2.strip() == "=" :
+						self.rows = filter(lambda x: x[key1] <= x[value1] or x[key2] == x[value2], self.rows)
+					elif condition2.strip() == ">=" :
+						self.rows = filter(lambda x: x[key1] <= x[value1] or x[key2] >= x[value2], self.rows)
+					elif condition2.strip() == "<=" :
+						self.rows = filter(lambda x: x[key1] <= x[value1] or x[key2] <= x[value2], self.rows)
+					elif condition2.strip() == ">" :
+						self.rows = filter(lambda x: x[key1] <= x[value1] or x[key2] > x[value2], self.rows)
+					elif condition2.strip() == "<" :
+						self.rows = filter(lambda x: x[key1] <= x[value1] or x[key2] < x[value2], self.rows)
+				elif condition1.strip() == ">":
+					if condition2.strip() == "!=" or condition2.strip() == "<>":
+						self.rows = filter(lambda x: x[key1] > x[value1] or x[key2] != x[value2], self.rows)
+					elif condition2.strip() == "=" :
+						self.rows = filter(lambda x: x[key1] > x[value1] or x[key2] == x[value2], self.rows)
+					elif condition2.strip() == ">=" :
+						self.rows = filter(lambda x: x[key1] > x[value1] or x[key2] >= x[value2], self.rows)
+					elif condition2.strip() == "<=" :
+						self.rows = filter(lambda x: x[key1] > x[value1] or x[key2] <= x[value2], self.rows)
+					elif condition2.strip() == ">" :
+						self.rows = filter(lambda x: x[key1] > x[value1] or x[key2] > x[value2], self.rows)
+					elif condition2.strip() == "<" :
+						self.rows = filter(lambda x: x[key1] > x[value1] or x[key2] < x[value2], self.rows)
+				elif condition1.strip() == "<":
+					if condition2.strip() == "!=" or condition2.strip() == "<>":
+						self.rows = filter(lambda x: x[key1] < x[value1] or x[key2] != x[value2], self.rows)
+					elif condition2.strip() == "=" :
+						self.rows = filter(lambda x: x[key1] < x[value1] or x[key2] == x[value2], self.rows)
+					elif condition2.strip() == ">=" :
+						self.rows = filter(lambda x: x[key1] < x[value1] or x[key2] >= x[value2], self.rows)
+					elif condition2.strip() == "<=" :
+						self.rows = filter(lambda x: x[key1] < x[value1] or x[key2] <= x[value2], self.rows)
+					elif condition2.strip() == ">" :
+						self.rows = filter(lambda x: x[key1] < x[value1] or x[key2] > x[value2], self.rows)
+					elif condition2.strip() == "<" :
+						self.rows = filter(lambda x: x[key1] < x[value1] or x[key2] < x[value2], self.rows)
 			except:
 				raise SqlException("Invalid column name")
 
@@ -241,6 +327,8 @@ class Table(object):
 				raise SqlException("No such column: " + key)
 
 			column = [row[key] for row in self.rows]
+			if len(column) is 0:
+				return [None]
 			if aggregate is not None:
 				if aggregate == "MAX":
 					return [max(column)]
@@ -323,5 +411,3 @@ class Database(object):
 		if len(t) == 0:
 			raise SqlException("No such table")
 		return t[0]
-
-
