@@ -1,11 +1,21 @@
 import os
 import itertools
+from packages.exceptions import SqlException
+from packages import debug
 
 METADATA_FILE = "metadata.txt"
 
-def debug(*args):
-	for i in args:
-		print i
+def check_overlapping_fields(columns, key):
+	fl = False
+	old_key = key
+	for col in columns:
+		if col.split(".")[1] == old_key:
+			if fl:
+				raise SqlException("EC: Joined tables have one of the fields overlapping. So, you need to specify in <table_name>.<column_name> format")
+			key = col
+			fl = True
+	return key
+
 
 class Table(object):
 		"""
@@ -30,7 +40,7 @@ class Table(object):
 			values = map(lambda x: int(x), values)
 
 			if len(values) != len(self.columns):
-				raise Exception("One of the rows is not of appropriate length in table " + self.name)
+				raise SqlException("One of the rows is not of appropriate length in table " + self.name)
 			
 			return dict(zip(self.columns, values))
 
@@ -90,27 +100,127 @@ class Table(object):
 			"""
 				delete rows where column 'key' has value 'value' and the condition doesn't hold
 			"""
-			if condition.strip() == "!=" or condition.strip() == "<>":
-				self.rows = filter(lambda x: x[key] != value, self.rows)
-			elif condition.strip() == "==" :
-				self.rows = filter(lambda x: x[key] == value, self.rows)
-			elif condition.strip() == ">=" :
-				self.rows = filter(lambda x: x[key] >= value, self.rows)
-			elif condition.strip() == "<=" :
-				self.rows = filter(lambda x: x[key] <= value, self.rows)
+			try:
+				if condition.strip() == "!=" or condition.strip() == "<>":
+					self.rows = filter(lambda x: x[key] != value, self.rows)
+				elif condition.strip() == "==" :
+					self.rows = filter(lambda x: x[key] == value, self.rows)
+				elif condition.strip() == ">=" :
+					self.rows = filter(lambda x: x[key] >= value, self.rows)
+				elif condition.strip() == "<=" :
+					self.rows = filter(lambda x: x[key] <= value, self.rows)
+				elif condition.strip() == ">" :
+					self.rows = filter(lambda x: x[key] > value, self.rows)
+				elif condition.strip() == "<" :
+					self.rows = filter(lambda x: x[key] < value, self.rows)
+			except:
+				raise SqlException("Invalid column name")
 
 		def delete_rows_by_col(self, key, value, condition):
 			"""
 				delete rows where column 'key' has value 'value' and the condition doesn't hold
 			"""
-			if condition.strip() == "!=" or condition.strip() == "<>":
-				self.rows = filter(lambda x: x[key] != x[value], self.rows)
-			elif condition.strip() == "==" :
-				self.rows = filter(lambda x: x[key] == x[value], self.rows)
-			elif condition.strip() == ">=" :
-				self.rows = filter(lambda x: x[key] >= x[value], self.rows)
-			elif condition.strip() == "<=" :
-				self.rows = filter(lambda x: x[key] <= x[value], self.rows)
+			try:
+				if condition.strip() == "!=" or condition.strip() == "<>":
+					self.rows = filter(lambda x: x[key] != x[value], self.rows)
+				elif condition.strip() == "==" :
+					self.rows = filter(lambda x: x[key] == x[value], self.rows)
+				elif condition.strip() == ">=" :
+					self.rows = filter(lambda x: x[key] >= x[value], self.rows)
+				elif condition.strip() == "<=" :
+					self.rows = filter(lambda x: x[key] <= x[value], self.rows)
+				elif condition.strip() == ">" :
+					self.rows = filter(lambda x: x[key] > x[value], self.rows)
+				elif condition.strip() == "<" :
+					self.rows = filter(lambda x: x[key] < x[value], self.rows)
+			except:
+				raise SqlException("Invalid column name")
+
+		def delete_rows_by_both_int(self, key1, value1, condition1, key2, value2, condition2):
+			"""
+				delete rows where column 'key' has value 'value' and the condition doesn't hold
+			"""
+			try:
+				if condition1.strip() == "!=" or condition1.strip() == "<>":
+					if condition2.strip() == "!=" or condition2.strip() == "<>":
+						self.rows = filter(lambda x: x[key1] != value1 or x[key2] != value2, self.rows)
+					elif condition2.strip() == "==" :
+						self.rows = filter(lambda x: x[key1] != value1 or x[key2] == value2, self.rows)
+					elif condition2.strip() == ">=" :
+						self.rows = filter(lambda x: x[key1] != value1 or x[key2] >= value2, self.rows)
+					elif condition2.strip() == "<=" :
+						self.rows = filter(lambda x: x[key1] != value1 or x[key2] <= value2, self.rows)
+					elif condition2.strip() == ">" :
+						self.rows = filter(lambda x: x[key1] != value1 or x[key2] > value2, self.rows)
+					elif condition2.strip() == "<" :
+						self.rows = filter(lambda x: x[key1] != value1 or x[key2] < value2, self.rows)
+				elif condition1.strip() == "==":
+					if condition2.strip() == "!=" or condition2.strip() == "<>":
+						self.rows = filter(lambda x: x[key1] == value1 or x[key2] != value2, self.rows)
+					elif condition2.strip() == "==" :
+						self.rows = filter(lambda x: x[key1] == value1 or x[key2] == value2, self.rows)
+					elif condition2.strip() == ">=" :
+						self.rows = filter(lambda x: x[key1] == value1 or x[key2] >= value2, self.rows)
+					elif condition2.strip() == "<=" :
+						self.rows = filter(lambda x: x[key1] == value1 or x[key2] <= value2, self.rows)
+					elif condition2.strip() == ">" :
+						self.rows = filter(lambda x: x[key1] == value1 or x[key2] > value2, self.rows)
+					elif condition2.strip() == "<" :
+						self.rows = filter(lambda x: x[key1] == value1 or x[key2] < value2, self.rows)
+				elif condition1.strip() == ">=":
+					if condition2.strip() == "!=" or condition2.strip() == "<>":
+						self.rows = filter(lambda x: x[key1] >= value1 or x[key2] != value2, self.rows)
+					elif condition2.strip() == "==" :
+						self.rows = filter(lambda x: x[key1] >= value1 or x[key2] == value2, self.rows)
+					elif condition2.strip() == ">=" :
+						self.rows = filter(lambda x: x[key1] >= value1 or x[key2] >= value2, self.rows)
+					elif condition2.strip() == "<=" :
+						self.rows = filter(lambda x: x[key1] >= value1 or x[key2] <= value2, self.rows)
+					elif condition2.strip() == ">" :
+						self.rows = filter(lambda x: x[key1] >= value1 or x[key2] > value2, self.rows)
+					elif condition2.strip() == "<" :
+						self.rows = filter(lambda x: x[key1] >= value1 or x[key2] < value2, self.rows)
+				elif condition1.strip() == "<=":
+					if condition2.strip() == "!=" or condition2.strip() == "<>":
+						self.rows = filter(lambda x: x[key1] <= value1 or x[key2] != value2, self.rows)
+					elif condition2.strip() == "==" :
+						self.rows = filter(lambda x: x[key1] <= value1 or x[key2] == value2, self.rows)
+					elif condition2.strip() == ">=" :
+						self.rows = filter(lambda x: x[key1] <= value1 or x[key2] >= value2, self.rows)
+					elif condition2.strip() == "<=" :
+						self.rows = filter(lambda x: x[key1] <= value1 or x[key2] <= value2, self.rows)
+					elif condition2.strip() == ">" :
+						self.rows = filter(lambda x: x[key1] <= value1 or x[key2] > value2, self.rows)
+					elif condition2.strip() == "<" :
+						self.rows = filter(lambda x: x[key1] <= value1 or x[key2] < value2, self.rows)
+				elif condition1.strip() == ">":
+					if condition2.strip() == "!=" or condition2.strip() == "<>":
+						self.rows = filter(lambda x: x[key1] > value1 or x[key2] != value2, self.rows)
+					elif condition2.strip() == "==" :
+						self.rows = filter(lambda x: x[key1] > value1 or x[key2] == value2, self.rows)
+					elif condition2.strip() == ">=" :
+						self.rows = filter(lambda x: x[key1] > value1 or x[key2] >= value2, self.rows)
+					elif condition2.strip() == "<=" :
+						self.rows = filter(lambda x: x[key1] > value1 or x[key2] <= value2, self.rows)
+					elif condition2.strip() == ">" :
+						self.rows = filter(lambda x: x[key1] > value1 or x[key2] > value2, self.rows)
+					elif condition2.strip() == "<" :
+						self.rows = filter(lambda x: x[key1] > value1 or x[key2] < value2, self.rows)
+				elif condition1.strip() == "<":
+					if condition2.strip() == "!=" or condition2.strip() == "<>":
+						self.rows = filter(lambda x: x[key1] < value1 or x[key2] != value2, self.rows)
+					elif condition2.strip() == "==" :
+						self.rows = filter(lambda x: x[key1] < value1 or x[key2] == value2, self.rows)
+					elif condition2.strip() == ">=" :
+						self.rows = filter(lambda x: x[key1] < value1 or x[key2] >= value2, self.rows)
+					elif condition2.strip() == "<=" :
+						self.rows = filter(lambda x: x[key1] < value1 or x[key2] <= value2, self.rows)
+					elif condition2.strip() == ">" :
+						self.rows = filter(lambda x: x[key1] < value1 or x[key2] > value2, self.rows)
+					elif condition2.strip() == "<" :
+						self.rows = filter(lambda x: x[key1] < value1 or x[key2] < value2, self.rows)
+			except:
+				raise SqlException("Invalid column name")
 
 		def get_col(self, col_name):
 			"""
@@ -124,17 +234,11 @@ class Table(object):
 				aggregate = None
 
 			# for queries where columns are specified without <table_name>.<column_name> format
-			fl = False
 			if "." not in key:
-				for col in self.columns:
-					if col.split(".")[1] == key:
-						if fl:
-							raise Exception("Joined tables have such field overlapping. So, you need to specify in <table_name>.<column_name> format")
-						key = col
-						fl = True
+				key = check_overlapping_fields(self.columns, key)
 
 			if key not in self.columns:
-				raise Exception("No such column: " + key)
+				raise SqlException("No such column: " + key)
 
 			column = [row[key] for row in self.rows]
 			if aggregate is not None:
@@ -149,7 +253,7 @@ class Table(object):
 				elif aggregate == "DISTINCT":
 					return list(set(column))
 				else:
-					raise Exception("Unknown aggregate function")
+					raise SqlException("Unknown aggregate function")
 			return column
 
 class Database(object):
@@ -199,7 +303,6 @@ class Database(object):
 		"""
 			initializes a table given in metadata with name, columns and rows being empty
 		"""
-
 		table = Table(tablename, columns, rows = [])
 		self.tables.append(table)
 
@@ -218,14 +321,7 @@ class Database(object):
 		"""
 		t = filter(lambda x: x.name == name, self.tables)
 		if len(t) == 0:
-			raise Exception("No such table")
+			raise SqlException("No such table")
 		return t[0]
-
-
-
-
-
-
-
 
 

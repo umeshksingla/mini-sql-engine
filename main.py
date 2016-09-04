@@ -1,12 +1,103 @@
-import classes
+from packages.exceptions import SqlException
+from packages import debug
 import sqlparse
+import classes
 import itertools
 
 db = classes.Database(name="Himalayan Database", tables=[])
 
-def debug(*args):
-	for i in args:
-		print i
+def check_overlapping_fields(columns, key):
+	fl = False
+	old_key = key
+	for col in columns:
+		if col.split(".")[1] == old_key:
+			if fl:
+				raise SqlException("EM: Joined tables have one of the fields overlapping. So, you need to specify in <table_name>.<column_name> format")
+			key = col
+			fl = True
+	return key
+
+def where_helper(temp_table, all_columns, where):
+	"""
+		Helper function for where; returns only first comparison results,
+		thereby helping in only where and AND conditions
+	"""
+	comparison = where.tokens[2]						# comparison = "A=8";
+	comparison.tokens = [x for x in comparison.tokens if not x.is_whitespace()]		# No more white spaces			
+	key = str(comparison.tokens[0])						# key = "A"
+	
+	if '.' not in key:
+		key = check_overlapping_fields(all_columns, key)
+	try:
+		value = int(str(comparison.tokens[2]))			# whether it is an integer value on RHS of comparison or some column
+		temp_table.delete_rows_by_int(key, value, str(comparison.tokens[1]))
+	except:
+		value = str(comparison.tokens[2])
+		if '.' not in value:
+			value = check_overlapping_fields(all_columns, value)
+		temp_table.delete_rows_by_col(key, value, str(comparison.tokens[1]))
+	return temp_table
+
+
+def where_select_query(temp_table, all_columns, where):
+	"""
+		filter where condition on the basis of AND, OR or none
+	"""
+	if len(where.tokens) >= 7:								# AND or OR are present
+		if str(where.tokens[4]) == "AND":
+			temp_table = where_helper(temp_table, all_columns, where)
+			
+			comparison = where.tokens[6]					# comparison = "A=8";
+			comparison.tokens = [x for x in comparison.tokens if not x.is_whitespace()]		# No more white spaces			
+			key = str(comparison.tokens[0])					# key = "A"
+			
+			if '.' not in key:
+				key = check_overlapping_fields(all_columns, key)
+			try:
+				value = int(str(comparison.tokens[2]))		# whether it is an int value on RHS of comparison or some column
+				temp_table.delete_rows_by_int(key, value, str(comparison.tokens[1]))
+			except:
+				value = str(comparison.tokens[2])
+				if '.' not in value:
+					value = check_overlapping_fields(all_columns, value)
+				temp_table.delete_rows_by_col(key, value, str(comparison.tokens[1]))
+
+		elif str(where.tokens[4]) == "OR":
+			
+			comparison1 = where.tokens[2]						# comparison = "A=8";
+			comparison1.tokens = [x for x in comparison1.tokens if not x.is_whitespace()]		# No more white spaces			
+			key1 = str(comparison1.tokens[0])						# key = "A"
+	
+			if '.' not in key1:
+				key1 = check_overlapping_fields(all_columns, key1)
+			try:
+				value1 = int(str(comparison1.tokens[2]))
+			except:
+				value1 = str(comparison1.tokens[2])
+				raise SqlException("OR on joins with columns on both sides of the comparison yet")
+			
+			comparison2 = where.tokens[6]						# comparison = "A=8";
+			comparison2.tokens = [x for x in comparison2.tokens if not x.is_whitespace()]		# No more white spaces			
+			key2 = str(comparison2.tokens[0])						# key = "A"
+	
+			if '.' not in key2:
+				key2 = check_overlapping_fields(all_columns, key2)
+			try:
+				value2 = int(str(comparison2.tokens[2]))
+			except:
+				value2 = str(comparison2.tokens[2])
+				raise SqlException("OR on joins with columns on both sides of the comparison yet")
+
+			temp_table.delete_rows_by_both_int(key1, value1, str(comparison1.tokens[1]), key2, value2, str(comparison2.tokens[2]))
+			
+		else:
+			raise SqlException("Invalid where condition")
+	elif len(where.tokens) <= 5:													# Only where is present
+		temp_table = where_helper(temp_table, all_columns, where)
+	else:
+		raise SqlException("Invalid where syntax")
+	return temp_table
+
 
 def select_query(stmt):
 	"""
@@ -19,9 +110,8 @@ def select_query(stmt):
 		table_list = str(stmt[6]).split(",")
 		table_list = [x.strip() for x in table_list]
 	except:
-		raise Exception("Invalid Syntax")
+		raise SqlException("Invalid Syntax")
 	else:
-		
 		all_columns = map(lambda x: db.get_table(x).prefix_table_name_to_columns(), table_list)
 
 		# upperbound columns of the new table
@@ -48,45 +138,10 @@ def select_query(stmt):
 		if len(stmt) >= 9:										# 'where' is present
 			where = stmt[8]										# where = "WHERE A=8"
 			if str(where.tokens[0]) == "WHERE":
-				comparison = where.tokens[2]					# comparison = "A=8";
-				comparison.tokens = [x for x in comparison.tokens if str(x) != " "]		# No more white spaces			
-				key = str(comparison.tokens[0])					# key = "A"
-				try:
-					value = int(str(comparison.tokens[2]))		# whether it is an int value on RHS of comparison or some column
-					temp_table.delete_rows_by_int(key, value, str(comparison.tokens[1]))
-				except:
-					value = str(comparison.tokens[2])
-					temp_table.delete_rows_by_col(key, value, str(comparison.tokens[1]))
+				temp_table = where_select_query(temp_table, all_columns, where)
+			else:
+				raise SqlException("Invalid Syntax")
 
-				# if AND
-				try:
-					if str(where.tokens[4]) == "AND":
-						comparison = where.tokens[6]					# comparison = "A=8";
-						comparison.tokens = [x for x in comparison.tokens if str(x) != " "]		# No more white spaces			
-						key = str(comparison.tokens[0])					# key = "A"
-						try:
-							value = int(str(comparison.tokens[2]))		# whether it is an int value on RHS of comparison or some column
-							temp_table.delete_rows_by_int(key, value, str(comparison.tokens[1]))
-						except:
-							value = str(comparison.tokens[2])
-							temp_table.delete_rows_by_col(key, value, str(comparison.tokens[1]))
-				except:
-					pass
-
-				# if OR
-				"""try:
-					if str(where.tokens[4]) == "OR":
-						comparison = where.tokens[6]					# comparison = "A=8";
-						comparison.tokens = [x for x in comparison.tokens if str(x) != " "]		# No more white spaces			
-						key = str(comparison.tokens[0])					# key = "A"
-						try:
-							value = int(str(comparison.tokens[2]))		# whether it is an int value on RHS of comparison or some column
-							temp_table.delete_rows_by_int(key, value, str(comparison.tokens[1]))
-						except:
-							value = str(comparison.tokens[2])
-							temp_table.delete_rows_by_col(key, value, str(comparison.tokens[1]))
-				except:
-					pass"""
 
 		if '*' in column_list:
 			temp_table.print_contents()
@@ -98,7 +153,7 @@ def select_query(stmt):
 			l = len(temp[0])
 			for row in temp:
 				if len(row) != l:
-					raise Exception("Incompatible column lengths: Generally, this happens when there's an aggregated query wihtout GROUP BY having non-aggregated column")
+					raise SqlException("Incompatible column lengths: Generally, this happens when there's an aggregated query wihtout GROUP BY having non-aggregated column")
 
 			print "Table: "
 			for col in column_list:
@@ -117,20 +172,21 @@ def main():
 	cont = True
 	while cont:
 		query = raw_input("hdsql>> ")
-
-		for command in sqlparse.split(query):
-			stmt = sqlparse.parse(sqlparse.format(command, keyword_case='upper'))
-			stmt = stmt[0].tokens
-			qtype = str(stmt[0])
-			if len(stmt) < 7:
-				raise Exception("Invalid Syntax")
-			if qtype == "SELECT":
-				select_query(stmt)
-			elif qtype == "QUIT":
-				cont = False
-			else:
-				raise Exception(qtype + " not supported.")
-
+		try:
+			for command in sqlparse.split(query):
+				stmt = sqlparse.parse(sqlparse.format(command, keyword_case='upper'))
+				stmt = stmt[0].tokens
+				qtype = str(stmt[0])
+				if len(stmt) < 7:
+					raise SqlException("Invalid Syntax")
+				if qtype == "SELECT":
+					select_query(stmt)
+				elif qtype == "QUIT":
+					cont = False
+				else:
+					raise SqlException(qtype + " not supported.")
+		except SqlException, e:
+			print e.message
 
 
 if __name__ == '__main__':
