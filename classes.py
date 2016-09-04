@@ -3,6 +3,10 @@ import itertools
 
 METADATA_FILE = "metadata.txt"
 
+def debug(*args):
+	for i in args:
+		print i
+
 class Table(object):
 		"""
 			the Table Class
@@ -20,7 +24,7 @@ class Table(object):
 
 		def __make_row(self, row):
 			"""
-				returns a row in key value form
+				returns a row in dict form
 			"""
 			values = row.split(",")
 			values = map(lambda x: int(x), values)
@@ -29,6 +33,12 @@ class Table(object):
 				raise Exception("One of the rows is not of appropriate length in table " + self.name)
 			
 			return dict(zip(self.columns, values))
+
+		def add_row(self, row):
+			"""
+				adds a row to the table when in ready form
+			"""
+			self.rows.append(dict(zip(self.columns, row)))
 
 		def __print_row(self, row):
 			
@@ -51,17 +61,16 @@ class Table(object):
 
 			rows = map(lambda x: x.replace("\"",""), rows)
 			rows = map(lambda x: x.strip(), rows)
-
+			
 			for i in rows:
 				row = self.__make_row(i)
 				self.rows.append(row)
-
 
 		def print_contents(self):
 			"""
 				print the contents of entire table
 			"""
-			print self.name
+			print "Table: " + self.name
 
 			for each in self.columns:
 				print each + "\t",
@@ -69,6 +78,46 @@ class Table(object):
 
 			for each in self.rows:
 				self.__print_row(each)
+
+		def get_rows(self):
+			"""
+				returns the list of rows with values in int form
+			"""
+			# [[637, 328],[78, 432],[38, 849],...]
+			a = []
+			b = []
+			for row in self.rows:
+				a = []
+				for each in self.columns:
+					a.append(row[each])
+				b.append(a)
+			return b
+
+		def delete_rows_by_int(self, key, value, condition):
+			"""
+				delete rows where column 'key' has value 'value' and the condition doesn't hold
+			"""
+			if condition.strip() == "!=" or condition.strip() == "<>":
+				self.rows = filter(lambda x: x[key] != value, self.rows)
+			elif condition.strip() == "==" :
+				self.rows = filter(lambda x: x[key] == value, self.rows)
+			elif condition.strip() == ">=" :
+				self.rows = filter(lambda x: x[key] >= value, self.rows)
+			elif condition.strip() == "<=" :
+				self.rows = filter(lambda x: x[key] <= value, self.rows)
+
+		def delete_rows_by_col(self, key, value, condition):
+			"""
+				delete rows where column 'key' has value 'value' and the condition doesn't hold
+			"""
+			if condition.strip() == "!=" or condition.strip() == "<>":
+				self.rows = filter(lambda x: x[key] != x[value], self.rows)
+			elif condition.strip() == "==" :
+				self.rows = filter(lambda x: x[key] == x[value], self.rows)
+			elif condition.strip() == ">=" :
+				self.rows = filter(lambda x: x[key] >= x[value], self.rows)
+			elif condition.strip() == "<=" :
+				self.rows = filter(lambda x: x[key] <= x[value], self.rows)
 
 
 class Database(object):
@@ -135,7 +184,7 @@ class Database(object):
 		"""
 			returns the table with name name from this database
 		"""
-		t = filter(lambda x: x.name = name, self.tables)
+		t = filter(lambda x: x.name == name, self.tables)
 		if len(t) == 0:
 			raise Exception("No such table")
 		return t[0]
