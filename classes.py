@@ -123,9 +123,19 @@ class Table(object):
 				key = col_name
 				aggregate = None
 
+			# for queries where columns are specified without <table_name>.<column_name> format
+			fl = False
+			if "." not in key:
+				for col in self.columns:
+					if col.split(".")[1] == key:
+						if fl:
+							raise Exception("Joined tables have such field overlapping. So, you need to specify in <table_name>.<column_name> format")
+						key = col
+						fl = True
+
 			if key not in self.columns:
 				raise Exception("No such column: " + key)
-			
+
 			column = [row[key] for row in self.rows]
 			if aggregate is not None:
 				if aggregate == "MAX":
@@ -140,7 +150,7 @@ class Table(object):
 					return list(set(column))
 				else:
 					raise Exception("Unknown aggregate function")
-
+			return column
 
 class Database(object):
 	"""

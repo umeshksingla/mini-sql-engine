@@ -95,6 +95,11 @@ def select_query(stmt):
 			for col in column_list:
 				temp.append(temp_table.get_col(col))
 
+			l = len(temp[0])
+			for row in temp:
+				if len(row) != l:
+					raise Exception("Incompatible column lengths: Generally, this happens when there's an aggregated query wihtout GROUP BY having non-aggregated column")
+
 			print "Table: "
 			for col in column_list:
 				print col + "\t",
