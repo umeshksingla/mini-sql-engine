@@ -58,7 +58,7 @@ def select_query(stmt):
 					value = str(comparison.tokens[2])
 					temp_table.delete_rows_by_col(key, value, str(comparison.tokens[1]))
 
-				# AND
+				# if AND
 				try:
 					if str(where.tokens[4]) == "AND":
 						comparison = where.tokens[6]					# comparison = "A=8";
@@ -72,7 +72,38 @@ def select_query(stmt):
 							temp_table.delete_rows_by_col(key, value, str(comparison.tokens[1]))
 				except:
 					pass
-		temp_table.print_contents()
+
+				# if OR
+				"""try:
+					if str(where.tokens[4]) == "OR":
+						comparison = where.tokens[6]					# comparison = "A=8";
+						comparison.tokens = [x for x in comparison.tokens if str(x) != " "]		# No more white spaces			
+						key = str(comparison.tokens[0])					# key = "A"
+						try:
+							value = int(str(comparison.tokens[2]))		# whether it is an int value on RHS of comparison or some column
+							temp_table.delete_rows_by_int(key, value, str(comparison.tokens[1]))
+						except:
+							value = str(comparison.tokens[2])
+							temp_table.delete_rows_by_col(key, value, str(comparison.tokens[1]))
+				except:
+					pass"""
+
+		if '*' in column_list:
+			temp_table.print_contents()
+		else:
+			temp = []
+			for col in column_list:
+				temp.append(temp_table.get_col(col))
+
+			print "Table: "
+			for col in column_list:
+				print col + "\t",
+			print
+
+			for row in zip(*temp):
+				for i in row:
+					print str(i) + "\t",
+				print
 
 
 def main():

@@ -84,14 +84,7 @@ class Table(object):
 				returns the list of rows with values in int form
 			"""
 			# [[637, 328],[78, 432],[38, 849],...]
-			a = []
-			b = []
-			for row in self.rows:
-				a = []
-				for each in self.columns:
-					a.append(row[each])
-				b.append(a)
-			return b
+			return [[row[each] for each in self.columns] for row in self.rows]
 
 		def delete_rows_by_int(self, key, value, condition):
 			"""
@@ -118,6 +111,35 @@ class Table(object):
 				self.rows = filter(lambda x: x[key] >= x[value], self.rows)
 			elif condition.strip() == "<=" :
 				self.rows = filter(lambda x: x[key] <= x[value], self.rows)
+
+		def get_col(self, col_name):
+			"""
+				returns the column col of the table
+			"""
+			if "(" in col_name:		# some aggregate function exists
+				aggregate = col_name.split("(")[0].upper()
+				key = col_name.split("(")[1].split(")")[0]
+			else:
+				key = col_name
+				aggregate = None
+
+			if key not in self.columns:
+				raise Exception("No such column: " + key)
+			
+			column = [row[key] for row in self.rows]
+			if aggregate is not None:
+				if aggregate == "MAX":
+					return [max(column)]
+				elif aggregate == "MIN":
+					return [min(column)]
+				elif aggregate == "AVG":
+					return [float(sum(column))/len(column)]
+				elif aggregate == "SUM":
+					return [sum(column)]
+				elif aggregate == "DISTINCT":
+					return list(set(column))
+				else:
+					raise Exception("Unknown aggregate function")
 
 
 class Database(object):
