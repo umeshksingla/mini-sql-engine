@@ -22,20 +22,23 @@ def where_helper(temp_table, all_columns, where):
 		Helper function for where; returns only first comparison results,
 		thereby helping in only where and AND conditions
 	"""
-	comparison = where.tokens[2]						# comparison = "A=8";
-	comparison.tokens = [x for x in comparison.tokens if not x.is_whitespace()]		# No more white spaces			
-	key = str(comparison.tokens[0])						# key = "A"
-	
-	if '.' not in key:
-		key = check_overlapping_fields(all_columns, key)
 	try:
-		value = int(str(comparison.tokens[2]))			# whether it is an integer value on RHS of comparison or some column
-		temp_table.delete_rows_by_int(key, value, str(comparison.tokens[1]))
+		comparison = where.tokens[2]						# comparison = "A=8";
+		comparison.tokens = [x for x in comparison.tokens if not x.is_whitespace()]		# No more white spaces			
+		key = str(comparison.tokens[0])						# key = "A"
+		
+		if '.' not in key:
+			key = check_overlapping_fields(all_columns, key)
+		try:
+			value = int(str(comparison.tokens[2]))			# whether it is an integer value on RHS of comparison or some column
+			temp_table.delete_rows_by_int(key, value, str(comparison.tokens[1]))
+		except:
+			value = str(comparison.tokens[2])
+			if '.' not in value:
+				value = check_overlapping_fields(all_columns, value)
+			temp_table.delete_rows_by_col(key, value, str(comparison.tokens[1]))
 	except:
-		value = str(comparison.tokens[2])
-		if '.' not in value:
-			value = check_overlapping_fields(all_columns, value)
-		temp_table.delete_rows_by_col(key, value, str(comparison.tokens[1]))
+		raise SqlException("Invalid Syntax")
 	return temp_table
 
 
@@ -74,6 +77,8 @@ def where_select_query(temp_table, all_columns, where):
 				value1 = int(str(comparison1.tokens[2]))
 			except:
 				value1 = str(comparison1.tokens[2])
+				if '.' not in value1:
+					value1 = check_overlapping_fields(all_columns, value1)
 			
 			comparison2 = where.tokens[6]						# comparison = "A=8";
 			comparison2.tokens = [x for x in comparison2.tokens if not x.is_whitespace()]		# No more white spaces			
@@ -85,6 +90,8 @@ def where_select_query(temp_table, all_columns, where):
 				value2 = int(str(comparison2.tokens[2]))
 			except:
 				value2 = str(comparison2.tokens[2])
+				if '.' not in value2:
+					value2 = check_overlapping_fields(all_columns, value2)
 
 			if type(value1) == int and type(value2) == int:
 				temp_table.delete_rows_by_both_ints(key1, value1, str(comparison1.tokens[1]), key2, value2, str(comparison2.tokens[2]))
@@ -114,6 +121,8 @@ def select_query(stmt):
 	except:
 		raise SqlException("Invalid Syntax")
 	else:
+		if len(table_list) != len(set(table_list)):
+			raise SqlException("Not Unique Tables")
 		all_columns = map(lambda x: db.get_table(x).prefix_table_name_to_columns(), table_list)
 
 		# upperbound columns of the new table
@@ -127,15 +136,13 @@ def select_query(stmt):
 		)
 		
 		all_tables_rows = map(lambda x: db.get_table(x).get_rows(), table_list)	
-
 		# cross product of all rows between tables
 		rows = list(itertools.product(*all_tables_rows))		# NOTE: product() takes the elements of a list, and not the list
 																# So, here it will be all_tables_rows's elements											
 		for each in rows:										# each is a tuple of rows i.e. lists, therefore, 
 			each = reduce(lambda x, y: x + y, each)				# reduce simply concatenates all the rows to form one row
+			#debug.debug(each)
 			temp_table.add_row(each)							# of temporary table	
-
-		#temp_table.print_contents()
 
 		if len(stmt) >= 9:										# 'where' is present
 			where = stmt[8]										# where = "WHERE A=8"
@@ -143,8 +150,7 @@ def select_query(stmt):
 				temp_table = where_select_query(temp_table, all_columns, where)
 			else:
 				raise SqlException("Invalid Syntax")
-
-
+		
 		if '*' in column_list:
 			temp_table.print_contents()
 		else:
@@ -157,7 +163,6 @@ def select_query(stmt):
 				if len(row) != l:
 					raise SqlException("Incompatible column lengths: Generally, this happens when there's an aggregated query wihtout GROUP BY having non-aggregated column")
 
-			print "Table: "
 			for col in column_list:
 				print col + "\t",
 			print
@@ -175,18 +180,26 @@ def main():
 	while cont:
 		query = raw_input("hdsql>> ")
 		try:
-			for command in sqlparse.split(query):
-				stmt = sqlparse.parse(sqlparse.format(command, keyword_case='upper'))
-				stmt = stmt[0].tokens
-				qtype = str(stmt[0])
-				if len(stmt) < 7:
-					raise SqlException("Invalid Syntax")
-				if qtype == "SELECT":
-					select_query(stmt)
-				elif qtype == "QUIT":
-					cont = False
-				else:
-					raise SqlException(qtype + " not supported.")
+			if query.upper() == "QUIT":
+				print "Bye"
+				cont = False
+			else:
+				for command in sqlparse.split(query):
+					stmt = sqlparse.parse(sqlparse.format(command, keyword_case='upper'))
+					stmt = stmt[0].tokens
+					qtype = str(stmt[0])
+					if len(stmt) < 7:
+						raise SqlException("Invalid Syntax")
+					if qtype == "SELECT":
+						try:
+							select_query(stmt)
+						except SqlException, e:
+							print e.message
+						except:
+							raise SqlException("Syntax Error/Query Execution Error")
+					else:
+						raise SqlException(qtype + " not supported.")
+					print
 		except SqlException, e:
 			print e.message
 

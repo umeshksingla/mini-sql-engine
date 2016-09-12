@@ -80,8 +80,6 @@ class Table(object):
 			"""
 				print the contents of entire table
 			"""
-			print "Table: " + self.name
-
 			for each in self.columns:
 				print each + "\t",
 			print
