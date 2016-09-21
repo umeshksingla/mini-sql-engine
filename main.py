@@ -94,9 +94,9 @@ def where_select_query(temp_table, all_columns, where):
 					value2 = check_overlapping_fields(all_columns, value2)
 
 			if type(value1) == int and type(value2) == int:
-				temp_table.delete_rows_by_both_ints(key1, value1, str(comparison1.tokens[1]), key2, value2, str(comparison2.tokens[2]))
+				temp_table.delete_rows_by_both_ints(key1, value1, str(comparison1.tokens[1]), key2, value2, str(comparison2.tokens[1]))
 			elif type(value1) == str and type(value2) == str:
-				temp_table.delete_rows_by_both_cols(key1, value1, str(comparison1.tokens[1]), key2, value2, str(comparison2.tokens[2]))
+				temp_table.delete_rows_by_both_cols(key1, value1, str(comparison1.tokens[1]), key2, value2, str(comparison2.tokens[1]))
 			else:
 				raise SqlException("Only OR on joins with either comparisons with int or columns in both conditions supported.")
 		else:

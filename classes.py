@@ -134,7 +134,7 @@ class Table(object):
 			except:
 				raise SqlException("Invalid column name")
 
-		def delete_rows_by_both_int(self, key1, value1, condition1, key2, value2, condition2):
+		def delete_rows_by_both_ints(self, key1, value1, condition1, key2, value2, condition2):
 			"""
 				delete rows where column 'key' has value 'value' and the condition doesn't hold
 			"""
